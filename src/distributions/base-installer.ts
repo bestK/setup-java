@@ -1,17 +1,17 @@
-import * as tc from '@actions/tool-cache';
 import * as core from '@actions/core';
-import * as fs from 'fs';
-import semver from 'semver';
-import path from 'path';
 import * as httpm from '@actions/http-client';
-import {getToolcachePath, isVersionSatisfies} from '../util';
+import * as tc from '@actions/tool-cache';
+import * as fs from 'fs';
+import os from 'os';
+import path from 'path';
+import semver from 'semver';
+import { INPUT_PROXY_URL, MACOS_JAVA_CONTENT_POSTFIX } from '../constants';
+import { getToolcachePath, isVersionSatisfies } from '../util';
 import {
   JavaDownloadRelease,
   JavaInstallerOptions,
   JavaInstallerResults
 } from './base-models';
-import {MACOS_JAVA_CONTENT_POSTFIX} from '../constants';
-import os from 'os';
 
 export abstract class JavaBase {
   protected http: httpm.HttpClient;
@@ -30,7 +30,7 @@ export abstract class JavaBase {
       maxRetries: 3
     });
 
-    ({version: this.version, stable: this.stable} = this.normalizeVersion(
+    ({ version: this.version, stable: this.stable } = this.normalizeVersion(
       installerOptions.version
     ));
     this.architecture = installerOptions.architecture || os.arch();
@@ -51,7 +51,14 @@ export abstract class JavaBase {
       core.info(`Resolved Java ${foundJava.version} from tool-cache`);
     } else {
       core.info('Trying to resolve the latest version from remote');
-      const javaRelease = await this.findPackageForDownload(this.version);
+      let javaRelease = await this.findPackageForDownload(this.version);
+
+      const proxyUrl = core.getInput(INPUT_PROXY_URL);
+      if (proxyUrl) {
+        javaRelease.url = proxyUrl + javaRelease.url.replace("https://", "")
+        core.info(`Use proxy url is ${javaRelease.url}`);
+      }
+
       core.info(`Resolved latest version as ${javaRelease.version}`);
       if (foundJava?.version === javaRelease.version) {
         core.info(`Resolved Java ${foundJava.version} from tool-cache`);
