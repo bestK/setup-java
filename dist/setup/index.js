@@ -101974,7 +101974,7 @@ function isProbablyGradleDaemonProblem(packageManager, error) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.DISTRIBUTIONS_ONLY_MAJOR_VERSION = exports.INPUT_MVN_TOOLCHAIN_VENDOR = exports.INPUT_MVN_TOOLCHAIN_ID = exports.MVN_TOOLCHAINS_FILE = exports.MVN_SETTINGS_FILE = exports.M2_DIR = exports.STATE_GPG_PRIVATE_KEY_FINGERPRINT = exports.INPUT_JOB_STATUS = exports.INPUT_CACHE = exports.INPUT_DEFAULT_GPG_PASSPHRASE = exports.INPUT_DEFAULT_GPG_PRIVATE_KEY = exports.INPUT_GPG_PASSPHRASE = exports.INPUT_GPG_PRIVATE_KEY = exports.INPUT_OVERWRITE_SETTINGS = exports.INPUT_SETTINGS_PATH = exports.INPUT_SERVER_PASSWORD = exports.INPUT_SERVER_USERNAME = exports.INPUT_SERVER_ID = exports.INPUT_CHECK_LATEST = exports.INPUT_JDK_FILE = exports.INPUT_DISTRIBUTION = exports.INPUT_JAVA_PACKAGE = exports.INPUT_ARCHITECTURE = exports.INPUT_JAVA_VERSION_FILE = exports.INPUT_JAVA_VERSION = exports.MACOS_JAVA_CONTENT_POSTFIX = void 0;
+exports.DISTRIBUTIONS_ONLY_MAJOR_VERSION = exports.INPUT_MVN_TOOLCHAIN_VENDOR = exports.INPUT_MVN_TOOLCHAIN_ID = exports.MVN_TOOLCHAINS_FILE = exports.MVN_SETTINGS_FILE = exports.M2_DIR = exports.STATE_GPG_PRIVATE_KEY_FINGERPRINT = exports.INPUT_PROXY_URL = exports.INPUT_JOB_STATUS = exports.INPUT_CACHE = exports.INPUT_DEFAULT_GPG_PASSPHRASE = exports.INPUT_DEFAULT_GPG_PRIVATE_KEY = exports.INPUT_GPG_PASSPHRASE = exports.INPUT_GPG_PRIVATE_KEY = exports.INPUT_OVERWRITE_SETTINGS = exports.INPUT_SETTINGS_PATH = exports.INPUT_SERVER_PASSWORD = exports.INPUT_SERVER_USERNAME = exports.INPUT_SERVER_ID = exports.INPUT_CHECK_LATEST = exports.INPUT_JDK_FILE = exports.INPUT_DISTRIBUTION = exports.INPUT_JAVA_PACKAGE = exports.INPUT_ARCHITECTURE = exports.INPUT_JAVA_VERSION_FILE = exports.INPUT_JAVA_VERSION = exports.MACOS_JAVA_CONTENT_POSTFIX = void 0;
 exports.MACOS_JAVA_CONTENT_POSTFIX = 'Contents/Home';
 exports.INPUT_JAVA_VERSION = 'java-version';
 exports.INPUT_JAVA_VERSION_FILE = 'java-version-file';
@@ -101994,6 +101994,7 @@ exports.INPUT_DEFAULT_GPG_PRIVATE_KEY = undefined;
 exports.INPUT_DEFAULT_GPG_PASSPHRASE = 'GPG_PASSPHRASE';
 exports.INPUT_CACHE = 'cache';
 exports.INPUT_JOB_STATUS = 'job-status';
+exports.INPUT_PROXY_URL = 'proxy-url';
 exports.STATE_GPG_PRIVATE_KEY_FINGERPRINT = 'gpg-private-key-fingerprint';
 exports.M2_DIR = '.m2';
 exports.MVN_SETTINGS_FILE = 'settings.xml';
@@ -102217,15 +102218,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.JavaBase = void 0;
-const tc = __importStar(__nccwpck_require__(7784));
 const core = __importStar(__nccwpck_require__(2186));
-const fs = __importStar(__nccwpck_require__(7147));
-const semver_1 = __importDefault(__nccwpck_require__(1383));
-const path_1 = __importDefault(__nccwpck_require__(1017));
 const httpm = __importStar(__nccwpck_require__(9925));
-const util_1 = __nccwpck_require__(2629);
-const constants_1 = __nccwpck_require__(9042);
+const tc = __importStar(__nccwpck_require__(7784));
+const fs = __importStar(__nccwpck_require__(7147));
 const os_1 = __importDefault(__nccwpck_require__(2037));
+const path_1 = __importDefault(__nccwpck_require__(1017));
+const semver_1 = __importDefault(__nccwpck_require__(1383));
+const constants_1 = __nccwpck_require__(9042);
+const util_1 = __nccwpck_require__(2629);
 class JavaBase {
     constructor(distribution, installerOptions) {
         this.distribution = distribution;
@@ -102246,7 +102247,12 @@ class JavaBase {
             }
             else {
                 core.info('Trying to resolve the latest version from remote');
-                const javaRelease = yield this.findPackageForDownload(this.version);
+                let javaRelease = yield this.findPackageForDownload(this.version);
+                const proxyUrl = core.getInput(constants_1.INPUT_PROXY_URL);
+                if (proxyUrl) {
+                    javaRelease.url = proxyUrl + javaRelease.url.replace("https://", "");
+                    core.info(`Use proxy url is ${javaRelease.url}`);
+                }
                 core.info(`Resolved latest version as ${javaRelease.version}`);
                 if ((foundJava === null || foundJava === void 0 ? void 0 : foundJava.version) === javaRelease.version) {
                     core.info(`Resolved Java ${foundJava.version} from tool-cache`);
